@@ -1,4 +1,3 @@
-rm(list = ls())
 library(tidyverse)
 library(stringr)
 library(readxl)
@@ -25,74 +24,6 @@ get_all_mps <- function(){
                         round(presentAuto_absent/(presentAuto_absent+presentAuto_present)*100, 1))
   mps$mazhor <- ifelse(is.na(mps$district_num), "l", "m")
   return(mps)
-}
-
-get_attendance <- function(excel_file){
-  attendance <- read_excel(excel_file)
-  names(attendance) <- c("id", "shortname", "start", "end", "voted",
-                         "voting_part", "didnotvote", "absent", "total")
-  attendance$start <- gsub("Початок повноважень", "", attendance$start)
-  attendance$end <- gsub("Припинення повноважень", "", attendance$end)
-  attendance$voted <- gsub("Голосував", "", attendance$voted)
-  attendance$voting_part <- gsub("Голосував\\(%\\)", "", attendance$voting_part)
-  attendance$voting_part <- gsub("%", "", attendance$voting_part)
-  attendance$voting_part <- gsub(",", ".", attendance$voting_part)
-  attendance$didnotvote <- gsub("Не голосував", "", attendance$didnotvote)
-  attendance$absent <- gsub("Відсутній", "", attendance$absent)
-  attendance$total <- gsub("Всього", "", attendance$total)
-  attendance$shortname[which(attendance$shortname == "Тимошенко Ю.В.")[1]] <- "Тимошенко Юлія В."
-  attendance$shortname[which(attendance$shortname == "Тимошенко Ю.В.")] <- "Тимошенко Юрій В."
-    attendance <- attendance %>% 
-    mutate_at(vars(voted:total), funs(as.numeric)) %>% 
-    mutate(absence_v = round((absent/total*100), 1))
-  attendance <- attendance %>% select(-id)
-  return(attendance)
-}
-
-assemble_data <- function(){
-  df <- mps %>% 
-    select(id, rada_id, gender, district_num, surname, firstname, fullname, shortname, absence_s) %>%
-    right_join(factions, by = "fullname") %>% 
-    full_join(attendance, by = "shortname") %>% 
-    arrange(fullname)
-  return(df)
-}
-
-add_images_as_xlabels <- function(g, pics) {
-  
-  ## ensure that the input is a ggplot
-  if(!inherits(g, "ggplot")) stop("Requires a valid ggplot to attach images to.")
-  
-  ## extract the components of the ggplot
-  gb   <- ggplot_build(gg)
-  xpos <- gb$panel$ranges[[1]]$x.major
-  yrng <- gb$panel$ranges[[1]]$y.range
-  
-  ## ensure that the number of pictures to use for labels 
-  ## matches the number of x categories
-  if(length(xpos) != length(pics)) stop("Detected a different number of pictures to x categories")
-  
-  ## create a new grob of the images aligned to the x-axis
-  ## at the categorical x positions
-  my_g <- do.call("grobTree", Map(rasterGrob, pics, x=xpos, y=0))
-  
-  ## annotate the original ggplot with the new grob
-  gg <- gg + annotation_custom(my_g,
-                               xmin = -Inf, 
-                               xmax =  Inf,
-                               ymax = yrng[1] + 0.25*(yrng[2]-yrng[1])/npoints, 
-                               ymin = yrng[1] - 0.50*(yrng[2]-yrng[1])/npoints)
-  
-  ## turn off clipping to allow plotting outside of the plot area
-  gg2 <- ggplotGrob(gg)
-  gg2$layout$clip[gg2$layout$name=="panel"] <- "off"
-  
-  ## produce the final, combined grob
-  grid.newpage()
-  grid.draw(gg2)
-  
-  return(invisible(NULL))
-  
 }
 
 get_factions_open <- function(){
