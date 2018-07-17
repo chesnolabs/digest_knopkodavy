@@ -1,6 +1,8 @@
 library(tidyverse)
 library(lubridate)
 
+# Спершу треба завантажити в оточення функції з knopkodavy_functions.R
+
 # Записуємо в директорію скачаний з адмінки файл кнопкодавів
 # (неособості порушення, не забути відфільтрувати за ВР8 і за опублікованими)
 knopk <- read_csv("knopkodavy.csv", locale = locale(encoding = "UTF-8"))
